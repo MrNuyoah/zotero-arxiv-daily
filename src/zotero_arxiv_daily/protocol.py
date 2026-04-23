@@ -22,14 +22,14 @@ class Paper:
     score: Optional[float] = None
 
     def _generate_tldr_with_llm(self, openai_client:OpenAI,llm_params:dict) -> str:
-        lang = llm_params.get('language', 'English')
-        prompt = f"Given the following information of a paper, generate a one-sentence TLDR summary in {lang}:\n\n"
+        lang = llm_params.get('language', 'Chinese')
+        # 修改 User Prompt：要求详细总结并评估在神经影像/医学图像生成中的潜在应用
+        prompt = f"Given the following information of a paper, generate a highly structured TLDR summary in {lang}. Please include: 1) The core methodology. 2) Its potential application or value for medical image analysis (especially 3D generation, MRI-to-PET synthesis, or latent space disentanglement), if applicable.\n\n"
+        
         if self.title:
             prompt += f"Title:\n {self.title}\n\n"
-
         if self.abstract:
             prompt += f"Abstract: {self.abstract}\n\n"
-
         if self.full_text:
             prompt += f"Preview of main content:\n {self.full_text}\n\n"
 
@@ -37,17 +37,17 @@ class Paper:
             logger.warning(f"Neither full text nor abstract is provided for {self.url}")
             return "Failed to generate TLDR. Neither full text nor abstract is provided"
         
-        # use gpt-4o tokenizer for estimation
         enc = tiktoken.encoding_for_model("gpt-4o")
         prompt_tokens = enc.encode(prompt)
-        prompt_tokens = prompt_tokens[:4000]  # truncate to 4000 tokens
+        prompt_tokens = prompt_tokens[:4000]
         prompt = enc.decode(prompt_tokens)
         
         response = openai_client.chat.completions.create(
             messages=[
                 {
+                    # 修改 System Prompt：设定专家身份
                     "role": "system",
-                    "content": f"You are an assistant who perfectly summarizes scientific paper, and gives the core idea of the paper to the user. Your answer should be in {lang}.",
+                    "content": f"You are a senior AI researcher specializing in medical image computing, neuroimaging, and deep learning architectures (like AAE, LDM, and Flow Matching). Your task is to extract the core ideas of papers and highlight anything relevant to cross-modal image synthesis or high-performance computing. Your answer should be in {lang}.",
                 },
                 {"role": "user", "content": prompt},
             ],
